@@ -1,4 +1,7 @@
-all: cmp copy encode decode
+all: cmp copy encode decode stshell
+
+stshell: stshell.c
+	gcc -o stshell stshell.c
 
 cmp: cmp.c
 	gcc -o cmp cmp.c
