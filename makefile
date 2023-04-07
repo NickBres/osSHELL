@@ -24,4 +24,4 @@ decode: decode.c codecA.a codecB.a
 	gcc -o decode decode.c codecA.a codecB.a
 
 clean:
-	rm -f *.o *.a cmp copy encode decode
+	rm -f *.o *.a cmp copy encode decode stshell
