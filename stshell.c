@@ -14,7 +14,7 @@ void handle_sigint(int sig)
     printf("\n");
 }
 
-void file_riderect(char *input, int output_redirect, char *output_file)
+void file_riderect(int output_redirect, char *output_file)
 {
     // Redirect output to a file if necessary
     if (output_redirect == 1)
@@ -72,16 +72,18 @@ void execute(char *input)
         {
             output_redirect = 1;
             output_file = args[j + 1];
+            args[j] = NULL;
             break;
         }
         else if (strcmp(args[j], ">>") == 0)
         {
             output_redirect = 2;
             output_file = args[j + 1];
+            args[j] = NULL;
             break;
         }
     }
-    file_riderect(input, output_redirect, output_file);
+    file_riderect(output_redirect, output_file);
 
     // Execute the command
     if (execvp(args[0], args) == -1)
