@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
 
 #define BUFFER_SIZE 4096
 
