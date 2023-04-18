@@ -1,8 +1,11 @@
 #include "codecA.h"
 #include "codecB.h"
+#include <stdlib.h>
 #include <string.h>
 
+
 int main(int argc, char *argv[]) {
+    system("export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH"); // to load the shared libraries
     if (argc != 3) {
         printf("Usage: encode <codec> <string>\n");
         return 1;
