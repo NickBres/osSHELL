@@ -1,4 +1,4 @@
-all: cmp copy encode decode stshell
+all: codecA codecB cmp copy encode decode stshell
 
 stshell: stshell.c
 	gcc -o stshell stshell.c
@@ -9,19 +9,19 @@ cmp: cmp.c
 copy: copy.c
 	gcc -o copy copy.c
 
-codecA.a: codecA.c codecA.h
-	gcc -c codecA.c 
-	ar rcs codecA.a codecA.o
+codecA: codecA.c codecA.h
+	gcc -c -fPIC codecA.c -o codecA.o
+	gcc -shared -o libcodecA.so codecA.o
 
-codecB.a: codecB.c codecB.h
-	gcc -c codecB.c 
-	ar rcs codecB.a codecB.o
+codecB: codecB.c codecB.h
+	gcc -c -fPIC codecB.c -o codecB.o
+	gcc -shared -o libcodecB.so codecB.o
 
-encode: encode.c codecA.a codecB.a
-	gcc -o encode encode.c codecA.a codecB.a
+encode: encode.c
+	gcc -o encode encode.c -L. -lcodecA -lcodecB
 
-decode: decode.c codecA.a codecB.a
-	gcc -o decode decode.c codecA.a codecB.a
+decode: decode.c
+	gcc -o decode decode.c -L. -lcodecA -lcodecB
 
 clean:
 	rm -f *.o *.a cmp copy encode decode stshell
