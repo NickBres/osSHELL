@@ -24,3 +24,25 @@ To run:
    ./copy <file1> <file2> -v -f
    ```
 
+## TaskB: Dynamic libraries implementing
+
+In this taks we wrote two simple dynamic libraries that converts characters they get. Also we wrote two simple tools that demnstrate dynamic library usage.
+
+Libraries:
+   CodecA - makes swaps every big char to small and small to big.
+   CodecB - adds 3 to ascii of every char.
+   
+ Tools:
+   Encode - gets codec name and text, prints encoded text to the console
+   Decode - gets codec name and text, prints decodedd text to the console
+   
+To run:
+   
+```sh
+   make encode codecA codecB
+   ./encode <codec> "some text"
+   ```
+```sh
+   make decode codecA codecB
+   ./decode <codec> "some text"
+   ```
