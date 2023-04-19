@@ -2,6 +2,9 @@
 
 In this assigment we made 3 different tasks.
 
+All tests has been made on MacBook Pro with arm proccesor using UTM virtual machine to run gcc (Ubuntu 11.3.0-1ubuntu1~22.04) 11.3.0.
+
+
 ## TaskA: Compare and Copy files tool
 
 ### Compare
@@ -42,7 +45,32 @@ To run:
    make encode codecA codecB
    ./encode <codec> "some text"
    ```
+## TaskA and TaskB Example
+
+<img width="639" alt="image" src="https://user-images.githubusercontent.com/70432147/233020933-62c795f4-0418-4a64-9f8f-b9877d7c7ea3.png">
+
+
+## TaskC: Shell Programm
+
+This is a C program that implements a simple shell, which allows users to execute commands by typing them into the terminal. The shell supports basic features such as input/output redirection and piping.
+
+Here is a brief overview of the program's functionality:
+
+* The program defines several functions to handle signal handling, input/output redirection, and command execution.
+* The main function enters an infinite loop, displaying a prompt and reading user input until the user types "exit".
+* If the user input contains a pipe character ("|"), the program splits the input into multiple commands and creates a pipeline of child processes to execute the commands.
+* If the user input does not contain a pipe character, the program simply forks a child process to execute the command.
+* In both cases, the child process sets up signal handling for Ctrl+c, redirects input/output if necessary, and executes the command using the execvp() function.
+* The parent process waits for the child process to exit and then repeats the loop.
+
+To run:
+
 ```sh
-   make decode codecA codecB
-   ./decode <codec> "some text"
+   make stshell
+   ./stshell
    ```
+## TaskC Example
+
+
+  <img width="1126" alt="image" src="https://user-images.githubusercontent.com/70432147/233023162-f9e438e5-50ca-4441-906a-f82166ffe42f.png">
+
