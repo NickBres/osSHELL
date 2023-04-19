@@ -151,10 +151,10 @@ int main()
             commands[i] = NULL;
 
             // Create an array of pipes for each command
-            int pipes[pipe_count][2];
+            int pipes[pipe_count][2]; // 2 file descriptors per pipe 0: read end, 1: write end
             for (int i = 0; i < pipe_count; i++)
             {
-                if (pipe(pipes[i]) == -1)
+                if (pipe(pipes[i]) == -1) // create a pipe
                 {
                     perror("pipe");
                     exit(1);
