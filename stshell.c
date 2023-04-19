@@ -81,6 +81,21 @@ void execute(char *input)
             output_file = args[j + 1];
             args[j] = NULL;
             break;
+        }else if(strcmp(args[j], "<") == 0){
+            int fd = open(args[j+1], O_RDONLY);
+            if (fd == -1)
+            {
+                perror("open");
+                exit(1);
+            }
+            if (dup2(fd, STDIN_FILENO) == -1)
+            {
+                perror("dup2");
+                exit(1);
+            }
+            close(fd);
+            args[j] = NULL;
+            break;
         }
     }
     file_riderect(output_redirect, output_file);
