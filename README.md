@@ -42,8 +42,10 @@ Libraries:
 To run:
    
 ```sh
-   make encode codecA codecB
+   make codecA codecB encode decode
+   export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
    ./encode <codec> "some text"
+   ./decode <codec> "some text"
    ```
 ## TaskA and TaskB Example
 
