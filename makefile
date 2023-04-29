@@ -1,5 +1,5 @@
 all: codecA codecB cmp copy encode decode stshell
-	
+	export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
 
 stshell: stshell.c
 	gcc -o stshell stshell.c
