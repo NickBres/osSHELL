@@ -50,6 +50,8 @@ To run:
 ## TaskA and TaskB Example
 
 <img width="639" alt="image" src="https://user-images.githubusercontent.com/70432147/233020933-62c795f4-0418-4a64-9f8f-b9877d7c7ea3.png">
+<img width="639" alt="image" src="https://user-images.githubusercontent.com/70432147/235315057-ac49a127-58ce-46db-99d5-bad705e5e324.png">
+
 
 
 ## TaskC: Shell Programm
