@@ -7,20 +7,24 @@
 #include <fcntl.h>
 
 #define MAX_LINE 80 /* 80 chars per line, per command, should be enough. */
+#define MAX_PROMPT 20
+
+char prompt[MAX_PROMPT] = "hello: ";
+int last_exit_status = 0;
+char last_command[MAX_LINE];
 
 void handle_sigint(int sig)
 {
     // Do nothing
-    printf("\n");
+    printf("You typed Control-C!\n");
 }
 
-void file_riderect(int output_redirect, char *output_file)
+void file_riderect(int output_redirect, int error_redirect, char *output_file, char *error_file)
 {
-    // Redirect output to a file if necessary
-    if (output_redirect == 1)
+    // Redirect stdout to a file if necessary
+    if (output_redirect > 0)
     {
-        // Output redirection with ">"
-        int fd = open(output_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        int fd = open(output_file, (output_redirect == 1) ? (O_WRONLY | O_CREAT | O_TRUNC) : (O_WRONLY | O_CREAT | O_APPEND), 0644);
         if (fd == -1)
         {
             perror("open");
@@ -33,16 +37,17 @@ void file_riderect(int output_redirect, char *output_file)
         }
         close(fd);
     }
-    else if (output_redirect == 2)
+
+    // Redirect stderr to a file if necessary
+    if (error_redirect > 0)
     {
-        // Output redirection with ">>"
-        int fd = open(output_file, O_WRONLY | O_CREAT | O_APPEND, 0644);
+        int fd = open(error_file, (error_redirect == 1) ? (O_WRONLY | O_CREAT | O_TRUNC) : (O_WRONLY | O_CREAT | O_APPEND), 0644);
         if (fd == -1)
         {
             perror("open");
             exit(1);
         }
-        if (dup2(fd, STDOUT_FILENO) == -1)
+        if (dup2(fd, STDERR_FILENO) == -1)
         {
             perror("dup2");
             exit(1);
@@ -65,7 +70,9 @@ void execute(char *input)
 
     // Check if this command contains an output redirection symbol
     int output_redirect = 0;
+    int error_redirect = 0;
     char *output_file = NULL;
+    char *error_file = NULL;
     for (int j = 0; args[j] != NULL; j++)
     {
         if (strcmp(args[j], ">") == 0)
@@ -81,8 +88,10 @@ void execute(char *input)
             output_file = args[j + 1];
             args[j] = NULL;
             break;
-        }else if(strcmp(args[j], "<") == 0){
-            int fd = open(args[j+1], O_RDONLY);
+        }
+        else if (strcmp(args[j], "<") == 0)
+        {
+            int fd = open(args[j + 1], O_RDONLY);
             if (fd == -1)
             {
                 perror("open");
@@ -97,8 +106,22 @@ void execute(char *input)
             args[j] = NULL;
             break;
         }
+        else if (strcmp(args[j], "2>") == 0)
+        {
+            error_redirect = 1;
+            error_file = args[j + 1];
+            args[j] = NULL;
+            break;
+        }
+        else if (strcmp(args[j], "2>>") == 0)
+        {
+            error_redirect = 2;
+            error_file = args[j + 1];
+            args[j] = NULL;
+            break;
+        }
     }
-    file_riderect(output_redirect, output_file);
+    file_riderect(output_redirect, error_redirect, output_file, error_file);
 
     // Execute the command
     if (execvp(args[0], args) == -1)
@@ -110,21 +133,64 @@ void execute(char *input)
 
 int main()
 {
+    // Set up signal handling for Ctrl+c
+    signal(SIGINT, handle_sigint);
+
     while (1)
     {
         char input[MAX_LINE + 1]; // +1 for the null terminator
 
         // Display the prompt and read the user's command
-        printf("stshell> ");
+        printf("%s", prompt);
         fgets(input, sizeof(input), stdin);
 
         // Remove the newline character from the end of the input
         input[strcspn(input, "\n")] = 0;
 
         // Exit if the user enters "exit"
-        if (strcmp(input, "exit") == 0)
+        if (strcmp(input, "quit") == 0)
         {
             exit(0);
+        }
+
+        // Check for !! command
+        if (strcmp(input, "!!") == 0)
+        {
+            if (strlen(last_command) == 0)
+            {
+                printf("No commands in history.\n");
+                continue;
+            }
+            strcpy(input, last_command);
+        }else{ // Save the command in history
+            strcpy(last_command, input);
+        }
+
+        //Check for cd command
+        if (strncmp(input, "cd ", 3) == 0)
+        {
+            char *dir = input + 3; // Get the directory name
+            if (chdir(dir) == -1)
+            {
+                perror("chdir");
+            }
+            continue;
+        }
+
+        // Check if input contains a prompt change
+        char newPrompt[MAX_PROMPT];
+        if (sscanf(input, "prompt = %s", newPrompt) == 1)
+        {
+            strcpy(prompt, newPrompt);
+            strcat(prompt, " "); // add a space after the prompt
+            continue;
+        }
+
+        // check for echo $? command
+        if (strcmp(input, "echo $?") == 0)
+        {
+            printf("%d\n", last_exit_status);
+            continue;
         }
 
         // Check if the input contains a pipe
@@ -260,6 +326,10 @@ int main()
                 // Wait for the child process to exit
                 int status;
                 wait(&status);
+                if (WIFEXITED(status))
+                {
+                    last_exit_status = WEXITSTATUS(status); // Capture exit status
+                }
             }
         }
     }

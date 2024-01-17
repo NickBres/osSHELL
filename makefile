@@ -1,4 +1,4 @@
-all: codecA codecB cmp copy encode decode stshell
+all: codecA codecB cmp copy encode decode stshell echo
 	
 
 stshell: stshell.c
@@ -24,5 +24,8 @@ encode: encode.c
 decode: decode.c
 	gcc -o decode decode.c -L. -lcodecA -lcodecB
 
+echo: echo.c
+	gcc -o echo echo.c
+
 clean:
-	rm -f *.o *.a *.so cmp copy encode decode stshell
+	rm -f *.o *.a *.so cmp copy encode decode stshell echo
