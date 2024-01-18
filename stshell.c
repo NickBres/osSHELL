@@ -13,10 +13,115 @@ char prompt[MAX_PROMPT] = "hello: ";
 int last_exit_status = 0;
 char last_command[MAX_LINE];
 
+typedef struct
+{
+    char *name;
+    char *value;
+} Variable, *VariablePtr;
+
+Variable *variables = NULL; // dynamic array of variables
+int var_count = 0;          // number of variables in the array
+
+char *get_variable_value(char *name)
+{
+    for (int i = 0; i < var_count; i++)
+    { // Loop through the variables
+        if (strcmp(variables[i].name, name) == 0)
+        { // Check if the name matches
+            return variables[i].value;
+        }
+    }
+    return NULL; // Return NULL if the variable was not found
+}
+
+void free_variable(char* varname){
+    for(int i = 0; i < var_count; i++){
+        if(strcmp(variables[i].name, varname) == 0){
+            free(variables[i].name);
+            free(variables[i].value);
+            for(int j = i; j < var_count - 1; j++){
+                variables[j] = variables[j + 1];
+            }
+            var_count--;
+            variables = realloc(variables, var_count * sizeof(Variable));
+            return;
+        }
+    }
+}
+
+void free_variables()
+{
+    for (int i = 0; i < var_count; i++)
+    {
+        free(variables[i].name);
+        free(variables[i].value);
+    }
+    free(variables);
+}
+
+void set_variable(char *name, char *value)
+{
+    //check if the variable already exists
+    if(get_variable_value(name) != NULL){
+        // if it does, free the old value
+        free_variable(name);
+    }
+    // realloc the array to make room for the new variable
+    variables = realloc(variables, (var_count + 1) * sizeof(Variable));
+
+    // Copy the name and value into the new array element
+    variables[var_count].name = strdup(name);
+    variables[var_count].value = strdup(value);
+
+    // increment the variable count
+    var_count++;
+}
+
 void handle_sigint(int sig)
 {
     // Do nothing
     printf("You typed Control-C!\n");
+}
+
+char *remove_spaces(const char *str) {
+    int len = strlen(str);
+    char *no_spaces = malloc(len + 1); // +1 for the null-terminator
+    char *current = no_spaces;
+
+    for (int i = 0; i < len; i++) {
+        if (!isspace((unsigned char)str[i])) {
+            *current++ = str[i];
+        }
+    }
+
+    *current = '\0'; // Null-terminate the new string
+    return no_spaces;
+}
+
+
+
+void echo(char *args[])
+{
+    if(args[0] == NULL){
+        return;
+    }
+    else if (strcmp(args[0], "$?") == 0) // Print the exit status
+    {
+        printf("%d\n", last_exit_status);
+    }else if(args[0][0] == '$'){ // Print the value of a variable
+        char* value = get_variable_value(args[0] + 1);
+        if(value != NULL){
+            printf("%s\n", value);
+        }
+    }
+    else
+    {
+        for (int i = 0; args[i] != NULL; i++)
+        {
+            printf("%s ", args[i]);
+        }
+        printf("\n");
+    }
 }
 
 void file_riderect(int output_redirect, int error_redirect, char *output_file, char *error_file)
@@ -150,6 +255,7 @@ int main()
         // Exit if the user enters "exit"
         if (strcmp(input, "quit") == 0)
         {
+            free_variables();  // Free the variables array
             exit(0);
         }
 
@@ -162,11 +268,13 @@ int main()
                 continue;
             }
             strcpy(input, last_command);
-        }else{ // Save the command in history
+        }
+        else
+        { // Save the command in history
             strcpy(last_command, input);
         }
 
-        //Check for cd command
+        // Check for cd command
         if (strncmp(input, "cd ", 3) == 0)
         {
             char *dir = input + 3; // Get the directory name
@@ -186,10 +294,41 @@ int main()
             continue;
         }
 
-        // check for echo $? command
-        if (strcmp(input, "echo $?") == 0)
+        // check for echo command
+        if (strncmp(input, "echo ", 5) == 0)
         {
-            printf("%d\n", last_exit_status);
+            // Tokenize the rest of the input and pass it to echo
+            char *echo_args[256];
+            int count = 0;
+            char *token = strtok(input + 5, " ");
+            while (token != NULL)
+            {
+                echo_args[count++] = token;
+                token = strtok(NULL, " ");
+            }
+            echo_args[count] = NULL; // Terminate the array with a NULL pointer
+            echo(echo_args);
+            continue;
+        }
+
+        // check for variable assignment
+        if (input[0] == '$')
+        {
+            char *var_name = strtok(input + 1, "="); // Get the variable name
+            if (var_name != NULL)
+            {
+                char *var_value = strtok(NULL, ""); // Get the rest of the input as the variable value
+                if (var_value != NULL)
+                {
+                    char *clear_value = remove_spaces(var_value);
+                    char *clear_name = remove_spaces(var_name);
+
+                    // create or update the variable
+                    set_variable(clear_name, clear_value);
+                    free(clear_name);
+                    free(clear_value);
+                }
+            }
             continue;
         }
 
