@@ -67,11 +67,24 @@ Here is a brief overview of the program's functionality:
 * In both cases, the child process sets up signal handling for Ctrl+c, redirects input/output if necessary, and executes the command using the execvp() function.
 * The parent process waits for the child process to exit and then repeats the loop.
 
+## Sell Programm 2.0
+
+* Stderr riderection 2>
+* Prompt change (prompt = myprompt)
+* echo command
+* echo $? returns last command status
+* cd implemented
+* !! implemented (last command rerun)
+* variables implemented ($varname = value) (echo $varname)
+* read implemented (another variable implementation) (read varname \n name)
+* if/else implemented (if [command] \n then \n [command 1] \n [command 2] ...  else \n [command 1] \n [command 2] ... fi)
+
+
 To run:
 
 ```sh
    make stshell
-   ./stshell
+   ./shell
    ```
 ## TaskC Example
 
