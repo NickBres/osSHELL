@@ -18,6 +18,7 @@ int else_count = 0;
 int current_command = 0;
 
 char prompt[MAX_PROMPT] = "hello: ";
+int isBackground = 0;
 int last_exit_status = 0;
 char last_command[MAX_LINE];
 
@@ -314,7 +315,7 @@ int main()
                 else_count = 0;
             }
         }
-        else
+        else // there is no stored commands. get input from user
         {
 
             // Display the prompt and read the user's command
@@ -379,7 +380,7 @@ int main()
                     }
                 }
                 if (!condition_result) // success in condition is zero
-                { // delete else commands
+                {                      // delete else commands
                     for (int i = 0; i < else_count; i++)
                     {
                         else_commands[i][0] = '\0';
@@ -403,6 +404,17 @@ int main()
                 free_variables(); // Free the variables array
                 exit(0);
             }
+        }
+
+        // check for & at the end of the command (not finished)
+        if (input[strlen(input) - 1] == '&')
+        {
+            isBackground = 1;
+            input[strlen(input) - 1] = '\0'; // remove &
+        }
+        else
+        {
+            isBackground = 0;
         }
 
         // Check for !! command
