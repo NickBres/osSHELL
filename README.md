@@ -67,7 +67,7 @@ Here is a brief overview of the program's functionality:
 * In both cases, the child process sets up signal handling for Ctrl+c, redirects input/output if necessary, and executes the command using the execvp() function.
 * The parent process waits for the child process to exit and then repeats the loop.
 
-## Sell Programm 2.0
+## Shell Programm 2.0
 
 * Stderr riderection 2>
 * Prompt change (prompt = myprompt)
