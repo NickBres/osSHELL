@@ -5,9 +5,17 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <ctype.h>
 
 #define MAX_LINE 80 /* 80 chars per line, per command, should be enough. */
 #define MAX_PROMPT 20
+
+// if command variables
+char then_commands[256][MAX_LINE];
+char else_commands[256][MAX_LINE];
+int then_count = 0;
+int else_count = 0;
+int current_command = 0;
 
 char prompt[MAX_PROMPT] = "hello: ";
 int last_exit_status = 0;
@@ -34,12 +42,16 @@ char *get_variable_value(char *name)
     return NULL; // Return NULL if the variable was not found
 }
 
-void free_variable(char* varname){
-    for(int i = 0; i < var_count; i++){
-        if(strcmp(variables[i].name, varname) == 0){
+void free_variable(char *varname)
+{
+    for (int i = 0; i < var_count; i++)
+    {
+        if (strcmp(variables[i].name, varname) == 0)
+        {
             free(variables[i].name);
             free(variables[i].value);
-            for(int j = i; j < var_count - 1; j++){
+            for (int j = i; j < var_count - 1; j++)
+            {
                 variables[j] = variables[j + 1];
             }
             var_count--;
@@ -61,8 +73,9 @@ void free_variables()
 
 void set_variable(char *name, char *value)
 {
-    //check if the variable already exists
-    if(get_variable_value(name) != NULL){
+    // check if the variable already exists
+    if (get_variable_value(name) != NULL)
+    {
         // if it does, free the old value
         free_variable(name);
     }
@@ -83,13 +96,16 @@ void handle_sigint(int sig)
     printf("You typed Control-C!\n");
 }
 
-char *remove_spaces(const char *str) {
+char *remove_spaces(const char *str)
+{
     int len = strlen(str);
     char *no_spaces = malloc(len + 1); // +1 for the null-terminator
     char *current = no_spaces;
 
-    for (int i = 0; i < len; i++) {
-        if (!isspace((unsigned char)str[i])) {
+    for (int i = 0; i < len; i++)
+    {
+        if (!isspace((unsigned char)str[i]))
+        {
             *current++ = str[i];
         }
     }
@@ -98,19 +114,21 @@ char *remove_spaces(const char *str) {
     return no_spaces;
 }
 
-
-
 void echo(char *args[])
 {
-    if(args[0] == NULL){
+    if (args[0] == NULL)
+    {
         return;
     }
     else if (strcmp(args[0], "$?") == 0) // Print the exit status
     {
         printf("%d\n", last_exit_status);
-    }else if(args[0][0] == '$'){ // Print the value of a variable
-        char* value = get_variable_value(args[0] + 1);
-        if(value != NULL){
+    }
+    else if (args[0][0] == '$')
+    { // Print the value of a variable
+        char *value = get_variable_value(args[0] + 1);
+        if (value != NULL)
+        {
             printf("%s\n", value);
         }
     }
@@ -235,6 +253,37 @@ void execute(char *input)
         exit(1);
     }
 }
+int execute_condition(char *input)
+{
+    int pid = fork();
+    int status;
+
+    if (pid == -1)
+    {
+        perror("fork");
+        return -1;
+    }
+    else if (pid == 0)
+    {
+        // Child process
+        char *args[] = {"/bin/sh", "-c", input, NULL};
+        execvp(args[0], args);
+        exit(1); // Exit with error status if execvp fails
+    }
+    else
+    {
+        // Parent process
+        waitpid(pid, &status, 0);
+        if (WIFEXITED(status))
+        {
+            return WEXITSTATUS(status);
+        }
+        else
+        {
+            return -1; // Return error if child didn't exit normally
+        }
+    }
+}
 
 int main()
 {
@@ -245,18 +294,115 @@ int main()
     {
         char input[MAX_LINE + 1]; // +1 for the null terminator
 
-        // Display the prompt and read the user's command
-        printf("%s", prompt);
-        fgets(input, sizeof(input), stdin);
-
-        // Remove the newline character from the end of the input
-        input[strcspn(input, "\n")] = 0;
-
-        // Exit if the user enters "exit"
-        if (strcmp(input, "quit") == 0)
+        if (then_count > 0)
         {
-            free_variables();  // Free the variables array
-            exit(0);
+            strcpy(input, then_commands[current_command]); // use then commands
+            then_commands[current_command++][0] = '\0';    // delete the command
+            if (current_command == then_count)
+            { // if all commands are executed
+                current_command = 0;
+                then_count = 0;
+            }
+        }
+        else if (else_count > 0)
+        {
+            strcpy(input, else_commands[current_command]); // use else commands
+            else_commands[current_command++][0] = '\0';    // delete the command
+            if (current_command == else_count)
+            { // if all commands are executed
+                current_command = 0;
+                else_count = 0;
+            }
+        }
+        else
+        {
+
+            // Display the prompt and read the user's command
+            printf("%s", prompt);
+            fgets(input, sizeof(input), stdin);
+
+            // Remove the newline character from the end of the input
+            input[strcspn(input, "\n")] = 0;
+
+            // Check for if command
+            if (strncmp(input, "if ", 3) == 0)
+            {
+                char *condition_command = input + 3;
+                int then_flag = 0;
+                int else_flag = 0;
+
+                // Execute the condition command
+                int condition_result = execute_condition(condition_command);
+
+                while (1)
+                {
+                    // print prompt
+                    if (then_flag)
+                    {
+                        printf("then> ");
+                    }
+                    else if (else_flag)
+                    {
+                        printf("else> ");
+                    }
+                    else
+                    {
+                        printf("if> ");
+                    }
+
+                    fgets(input, sizeof(input), stdin); // Read the user's input
+                    input[strcspn(input, "\n")] = 0;    // Remove the newline character
+
+                    if (strcmp(input, "then") == 0)
+                    {
+                        then_flag = 1;
+                        continue;
+                    }
+                    else if (strcmp(input, "else") == 0)
+                    {
+                        then_flag = 0;
+                        else_flag = 1;
+                        continue;
+                    }
+                    else if (strcmp(input, "fi") == 0)
+                    {
+                        break;
+                    }
+
+                    if (then_flag)
+                    {
+                        strcpy(then_commands[then_count++], input); // Store the command in the then_commands array
+                    }
+                    else if (else_flag)
+                    {
+                        strcpy(else_commands[else_count++], input); // Store the command in the else_commands array
+                    }
+                }
+                if (!condition_result) // success in condition is zero
+                { // delete else commands
+                    for (int i = 0; i < else_count; i++)
+                    {
+                        else_commands[i][0] = '\0';
+                    }
+                    else_count = 0;
+                }
+                else
+                { // delete then commands
+                    for (int i = 0; i < then_count; i++)
+                    {
+                        then_commands[i][0] = '\0';
+                    }
+                    then_count = 0;
+                }
+                continue;
+            }
+
+            // Exit if the user enters "exit"
+            if (strcmp(input, "quit") == 0)
+            {
+                free_variables(); // Free the variables array
+                exit(0);
+            }
         }
 
         // Check for !! command
@@ -272,6 +418,18 @@ int main()
         else
         { // Save the command in history
             strcpy(last_command, input);
+        }
+
+        // Check for read commond
+        if (strncmp(input, "read ", 5) == 0)
+        {
+            char *var_name = input + 5;
+            char *value = malloc(MAX_LINE);
+            fgets(value, MAX_LINE, stdin);   // Read the value from stdin
+            value[strcspn(value, "\n")] = 0; // Remove the newline character
+            set_variable(var_name, value);
+            free(value);
+            continue;
         }
 
         // Check for cd command

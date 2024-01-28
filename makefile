@@ -2,7 +2,7 @@ all: codecA codecB cmp copy encode decode stshell
 	
 
 stshell: stshell.c
-	gcc -o stshell stshell.c
+	gcc -o shell stshell.c
 
 cmp: cmp.c
 	gcc -o cmp cmp.c
@@ -26,4 +26,4 @@ decode: decode.c
 
 
 clean:
-	rm -f *.o *.a *.so cmp copy encode decode stshell
+	rm -f *.o *.a *.so cmp copy encode decode shell
