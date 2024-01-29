@@ -115,32 +115,56 @@ char *remove_spaces(const char *str)
     return no_spaces;
 }
 
-void echo(char *args[])
+void echo(char *args[], int args_count, int output_redirect, char *output_file)
 {
-    if (args[0] == NULL)
+    int original_stdout = dup(STDOUT_FILENO);
+
+    if (output_redirect)
     {
-        return;
-    }
-    else if (strcmp(args[0], "$?") == 0) // Print the exit status
-    {
-        printf("%d\n", last_exit_status);
-    }
-    else if (args[0][0] == '$')
-    { // Print the value of a variable
-        char *value = get_variable_value(args[0] + 1);
-        if (value != NULL)
+        int fd = open(output_file, output_redirect == 1 ? (O_WRONLY | O_CREAT | O_TRUNC) : (O_WRONLY | O_CREAT | O_APPEND), 0644);
+        if (fd == -1)
         {
-            printf("%s\n", value);
+            perror("open");
+            exit(1);
         }
+        if (dup2(fd, STDOUT_FILENO) == -1)
+        {
+            perror("dup2");
+            exit(1);
+        }
+        close(fd);
     }
-    else
+    for (int i = 0; i < args_count; i++)
     {
-        for (int i = 0; args[i] != NULL; i++)
+        if (args[i] == "$?")
+        {
+            printf("%d ", last_exit_status);
+        }
+        else if (args[i][0] == '$')
+        {
+            char *var_value = get_variable_value(args[i] + 1);
+            if (var_value != NULL)
+            {
+                printf("%s ", var_value);
+            }
+            else
+            {
+                printf("%s is not defined ", args[i] + 1);
+            }
+        }
+        else
         {
             printf("%s ", args[i]);
         }
-        printf("\n");
     }
+    printf("\n");
+
+    fflush(stdout);
+    if (output_redirect)
+    {
+        dup2(original_stdout, STDOUT_FILENO);
+    }
+    close(original_stdout);
 }
 
 void file_riderect(int output_redirect, int error_redirect, char *output_file, char *error_file)
@@ -470,14 +494,32 @@ int main()
             // Tokenize the rest of the input and pass it to echo
             char *echo_args[256];
             int count = 0;
+            int output_redirect = 0;
+            char *output_file = NULL;
             char *token = strtok(input + 5, " ");
             while (token != NULL)
             {
-                echo_args[count++] = token;
-                token = strtok(NULL, " ");
+                if (strcmp(token, ">") == 0)
+                {
+                    output_redirect = 1;
+                    token = strtok(NULL, " ");
+                    output_file = token;
+                    break;
+                }
+                else if (strcmp(token, ">>") == 0)
+                {
+                    output_redirect = 2;
+                    token = strtok(NULL, " ");
+                    output_file = token;
+                    break;
+                }
+                else
+                {
+                    echo_args[count++] = token;
+                    token = strtok(NULL, " ");
+                }
             }
-            echo_args[count] = NULL; // Terminate the array with a NULL pointer
-            echo(echo_args);
+            echo(echo_args, count, output_redirect, output_file);
             continue;
         }
 
