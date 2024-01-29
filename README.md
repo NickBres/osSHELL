@@ -61,17 +61,30 @@ This is a C program that implements a simple shell, which allows users to execut
 Here is a brief overview of the program's functionality:
 
 * The program defines several functions to handle signal handling, input/output redirection, and command execution.
-* The main function enters an infinite loop, displaying a prompt and reading user input until the user types "exit".
+* The main function enters an infinite loop, displaying a prompt and reading user input until the user types "quit".
 * If the user input contains a pipe character ("|"), the program splits the input into multiple commands and creates a pipeline of child processes to execute the commands.
 * If the user input does not contain a pipe character, the program simply forks a child process to execute the command.
 * In both cases, the child process sets up signal handling for Ctrl+c, redirects input/output if necessary, and executes the command using the execvp() function.
 * The parent process waits for the child process to exit and then repeats the loop.
 
+## Shell Programm 2.0
+
+* Stderr riderection 2>
+* Prompt change (prompt = myprompt)
+* echo command
+* echo $? returns last command status
+* cd implemented
+* !! implemented (last command rerun)
+* variables implemented ($varname = value) (echo $varname)
+* read implemented (another variable implementation) (read varname \n name)
+* if/else implemented (if [command] \n then \n [command 1] \n [command 2] ...  else \n [command 1] \n [command 2] ... fi)
+
+
 To run:
 
 ```sh
    make stshell
-   ./stshell
+   ./shell
    ```
 ## TaskC Example
 
