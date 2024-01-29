@@ -136,7 +136,7 @@ void echo(char *args[], int args_count, int output_redirect, char *output_file)
     }
     for (int i = 0; i < args_count; i++)
     {
-        if (args[i] == "$?")
+        if (strcmp(args[i], "$?") == 0)
         {
             printf("%d ", last_exit_status);
         }
